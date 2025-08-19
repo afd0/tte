@@ -11,7 +11,7 @@ void update(tte::engine *engine) {
         if (engine->e.type == 'q') { engine->shutdown(); }
         else { engine->printChar(1, 1, engine->e.type); }
     } else {
-        engine->printChar(1, 1, ' ');
+        engine->printChar(1, 1, 'T');
     }
 }
 
