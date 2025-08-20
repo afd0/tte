@@ -13,7 +13,11 @@ namespace tte {
             box(int xx, int yy, int ww, int hh) {
                 x = xx; y = yy; w = ww; h = hh;
             }
+            box() {
+
+            }
             void printText(int tx, int ty, std::string text);
+            void printChar(int cx, int cy, char c);
     };
 
     class inputEvent {
@@ -37,7 +41,7 @@ namespace tte {
             char getCharacter();
             int shutdown();
             static void printText(int x, int y, std::string text);
-            void printChar(int x, int y, char c);
+            static void printChar(int x, int y, char c);
             box drawBox(int x, int y, int w, int h, std::string title);
             void getBounds(int &x, int &y);
             void clear();

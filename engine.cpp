@@ -16,19 +16,20 @@ void tte::init() {
     start_color();
     clear();
     refresh();
-    nodelay(stdscr, true);
+    //nodelay(stdscr, true);
 }
 
 void engine::handleInput() {
-    char l = -1;
-    char ls = -1;
+    //char l = -1;
+    //char ls = -1;
+    e.type = -1;
     while (running) {
         std::this_thread::sleep_for(std::chrono::milliseconds(40));
-        l = getch();
-        if (l != -1) { ls = l; }
-        e.type = ls; 
-        ls = -1;
-        //e.type = getch();
+        //l = getch();
+        //if (l != -1) { ls = l; }
+        //e.type = ls; 
+        //ls = -1;
+        e.type = getch();
     }
 }
 
@@ -101,4 +102,8 @@ void engine::getBounds(int &x, int &y) {
 
 void box::printText(int tx, int ty, std::string text) {
     engine::printText(tx + x + 1, ty + y + 1, text);
+}
+
+void box::printChar(int tx, int ty, char c) {
+    engine::printChar(tx + x + 1, ty + y + 1, c);
 }
