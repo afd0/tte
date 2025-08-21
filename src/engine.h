@@ -18,6 +18,7 @@ namespace tte {
             }
             void printText(int tx, int ty, std::string text);
             void printChar(int cx, int cy, char c);
+            void clear();
     };
 
     class inputEvent {
@@ -44,6 +45,7 @@ namespace tte {
             static void printChar(int x, int y, char c);
             box drawBox(int x, int y, int w, int h, std::string title);
             void getBounds(int &x, int &y);
-            void clear();
+            void getCursorPos(int &x, int &y);
+            void scrClear();
     };
 }

@@ -24,7 +24,7 @@ void engine::handleInput() {
     //char ls = -1;
     e.type = -1;
     while (running) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(40));
+        std::this_thread::sleep_for(std::chrono::milliseconds(80));
         //l = getch();
         //if (l != -1) { ls = l; }
         //e.type = ls; 
@@ -62,7 +62,7 @@ void engine::printText(int x, int y, std::string text) {
     mvwprintw(stdscr, y, x, text.c_str());
 }
 
-void engine::clear() {
+void engine::scrClear() {
     clear();
 }
 
@@ -100,10 +100,27 @@ void engine::getBounds(int &x, int &y) {
     x = mx; y = my;
 }
 
+void engine::getCursorPos(int &x, int &y) {
+    x = getcurx(stdscr);
+    y = getcury(stdscr);
+}
+
 void box::printText(int tx, int ty, std::string text) {
-    engine::printText(tx + x + 1, ty + y + 1, text);
+    if (ty + y + 1 < y + h - 1) {
+        if (text.size() > w - 2)
+            text.resize(w - 2);
+        engine::printText(tx + x + 1, ty + y + 1, text);
+    }
 }
 
 void box::printChar(int tx, int ty, char c) {
     engine::printChar(tx + x + 1, ty + y + 1, c);
+}
+
+void box::clear() {
+    for (int i = 0; i < w - 2; i++) {
+        for (int j = 0; j < h - 2; j++) {
+            engine::printChar(i + x + 1, j + y + 1, ' ');
+        }
+    }
 }
