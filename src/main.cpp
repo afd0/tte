@@ -6,6 +6,8 @@
 #include <vector>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
+#include <termcolor/termcolor.hpp>
 #include "engine.h"
 
 tte::engine engine;
@@ -31,10 +33,11 @@ void drawProjectView(std::string path) {
     int maxX, maxY;
     engine.getBounds(maxX, maxY);
 
-    fileBox = engine.drawBox(0, 0, maxX / 3, maxY, "Files");
+    engine.changeColor(240, 236, 190);
+    fileBox = engine.drawBox(0, 0, maxX / 3, maxY - 1, "Files");
     viewBox = engine.drawBox(maxX / 3, 0, maxX / 3, maxY / 2, "File preview");
-    descBox = engine.drawBox(maxX / 3, maxY / 2, maxX / 3, maxY / 2 + 1, "Description");
-    planBox = engine.drawBox(maxX / 3 * 2, 0, maxX / 3, maxY, "Plans&TODO");
+    descBox = engine.drawBox(maxX / 3, maxY / 2, maxX / 3, maxY / 2, "Description");
+    planBox = engine.drawBox(maxX / 3 * 2, 0, maxX / 3, maxY - 1, "Plans&TODO");
 
     //std::string path = path;
 
@@ -44,22 +47,26 @@ void drawProjectView(std::string path) {
 
     active_project_dir = path;
 
+    std::vector<std::string> fileNames;
+
     for (const auto & entry : std::filesystem::recursive_directory_iterator(path)) {
         std::string p = entry.path();
         if (p.find(".dsc") == std::string::npos 
         &&  p.find(".pln") == std::string::npos
         &&  p.find(".vscode") == std::string::npos
-        &&  p.find(".git") == std::string::npos) {
+        &&  p.find(".git") == std::string::npos
+        &&  p.find(".name") == std::string::npos) {
             p = p.substr(path.length());
             fileNames.push_back(p);
         }
     }
 
+    engine.changeColor(190, 178, 230);
     for (int i = 0; i < fileNames.size(); i++) {
         fileBox.printText(1, i, fileNames[i]);
     }
 
-    std::ifstream descFile(path + "/project.dsc");
+    std::ifstream descFile(path + "/meta/project.dsc");
     std::string line;
     int i = 0;
     while(getline(descFile, line)) {
@@ -68,13 +75,15 @@ void drawProjectView(std::string path) {
         i++;
     }
 
-    std::ifstream planFile(path + "/project.pln");
+    std::ifstream planFile(path + "/meta/project.pln");
     i = 0;
     while(getline(planFile, line)) {
         if (i < planBox.h)
             planBox.printText(0, i, line);
         i++;
     }
+
+    engine.printText(0, maxY, "Press b to build, c to open project in vscode");
 }
 
 /*std::vector<std::string> loadProjectList() {
@@ -87,13 +96,13 @@ void drawProjectView(std::string path) {
 
     //return projects;
 }*/
-
 bool projectsLoaded = false;
 
 void drawMainMenu() {
     int maxX, maxY;
     engine.getBounds(maxX, maxY);
 
+    engine.changeColor(240, 236, 190);
     menuBox = engine.drawBox(maxX / 4, maxY / 4, maxX / 2, maxY / 2, "Select project");
 
     if (!projectsLoaded) {
@@ -106,8 +115,12 @@ void drawMainMenu() {
         projectsLoaded = true;
     }
 
+    engine.changeColor(190, 178, 230);
     for (int i = 0; i < projects.size(); i++) {
-        menuBox.printText(1, i, projects[i]);
+        std::ifstream nameFile(home_dir + "/" + projects[i].substr(2) + "/meta/project.name");
+        std::string name; 
+        getline(nameFile, name);
+        menuBox.printText(1, i, name);
     } 
 }
 
@@ -125,12 +138,12 @@ void update(tte::engine *engine) {
             case 'i':
                 if (mode == 1) {
                     if (selection > 0) {
-                        fileBox.printChar(0, selection, ' ');
+                        fileBox.printChar(0, selection, L' ');
                         selection--;
                     }
                 } else if (mode == 0) {
                     if (selection > 0) {
-                        menuBox.printChar(0, selection, ' ');
+                        menuBox.printChar(0, selection, L' ');
                         selection--;
                     }
                 }
@@ -138,14 +151,29 @@ void update(tte::engine *engine) {
             case 'k':
                 if (mode == 1) {
                     if (selection < fileNames.size() - 1) {
-                        fileBox.printChar(0, selection, ' ');
+                        fileBox.printChar(0, selection, L' ');
                         selection++;
                     }
                 } else if (mode == 0) {
                     if (selection < projects.size() - 1) {
-                        menuBox.printChar(0, selection, ' ');
+                        menuBox.printChar(0, selection, L' ');
                         selection++;
                     }
+                }
+                break;
+            case 'c':
+                if (mode == 1) {
+                    std::string command = "code " + active_project_dir;
+                    system(command.c_str());
+                }
+                break;
+            case 'b':
+                if (mode == 1) {
+                    engine->printText(engine->maxX - 11, engine->maxY, "Building...");
+                    std::string command;
+                    std::ifstream nameFile(active_project_dir + "/meta/.build");
+                    getline(nameFile, command);
+                    system(command.c_str());
                 }
                 break;
             case '\n':
@@ -154,11 +182,14 @@ void update(tte::engine *engine) {
                     std::ifstream MyReadFile(active_project_dir + fileNames[selection]);
                     std::string line;
                     int i = 0;
+                    engine->changeColor(190, 178, 230);
                     while(getline(MyReadFile, line)) {
                         if (i < viewBox.h)
                             viewBox.printText(0, i, line);
                         i++;
                     }
+                    engine->changeColor(240, 236, 190);
+                    viewBox.redraw(); fileBox.redraw(); descBox.redraw(); planBox.redraw();
                 } else if (mode == 0) {
                     engine->scrClear();
                     mode = 1;
@@ -168,6 +199,7 @@ void update(tte::engine *engine) {
             case 27:
                 engine->scrClear();
                 mode = 0;
+                selection = 0;
                 drawMainMenu();
                 break;
         }
@@ -177,13 +209,15 @@ void update(tte::engine *engine) {
     }
 
     if (mode == 1)
-        fileBox.printChar(0, selection, '>');
+        fileBox.printChar(0, selection, L'>');
     else if (mode == 0)
-        menuBox.printChar(0, selection, '>');
+        menuBox.printChar(0, selection, L'>');
 }
 
 int main() {
     tte::init();
+
+    //std::cout << termcolor::color<200, 200, 255>;
 
     int maxX, maxY;
     engine.getBounds(maxX, maxY);

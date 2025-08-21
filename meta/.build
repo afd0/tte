@@ -1,0 +1,1 @@
+g++ /Users/toivolehtinen/Dev/hub/tte/tte-1/src/*.cpp -std=c++17 -lncurses -o hub

@@ -1,12 +1,19 @@
+#define _XOPEN_SOURCE 700
 #include "engine.h"
 #include "main.h"
 #include <string>
 #include <ncurses.h>
+#include <locale.h>
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <termcolor/termcolor.hpp>
 
 using namespace tte;
+
+static const char * ESC = "\x1b[";
+
+#define COLOR_BONE 10
 
 void tte::init() {
     initscr();
@@ -16,6 +23,11 @@ void tte::init() {
     start_color();
     clear();
     refresh();
+    //color defs
+    init_color(COLOR_BONE, 959, 924, 744);
+    init_pair(1, COLOR_BONE, COLOR_BLACK);
+
+    setlocale(LC_ALL, "");
     //nodelay(stdscr, true);
 }
 
@@ -23,6 +35,7 @@ void engine::handleInput() {
     //char l = -1;
     //char ls = -1;
     e.type = -1;
+    std::string c;
     while (running) {
         std::this_thread::sleep_for(std::chrono::milliseconds(80));
         //l = getch();
@@ -42,7 +55,7 @@ void engine::run() {
 
     while (running) {
         update(this);
-        refresh();
+        //refresh();
     }
     t1.join();
 }
@@ -59,38 +72,48 @@ int engine::shutdown() {
 }
 
 void engine::printText(int x, int y, std::string text) {
-    mvwprintw(stdscr, y, x, text.c_str());
+    std::string command = ESC + std::to_string(y + 1) + ";" + std::to_string(x + 1) + "H";
+    std::cout << command << text;
 }
 
 void engine::scrClear() {
-    clear();
+    std::string command = ESC;
+    command = command + "2J";
+    std::cout << command;
 }
 
 void engine::printChar(int x, int y, char c) {
-    mvwaddch(stdscr, y, x, c);
+    std::string command = ESC + std::to_string(y + 1) + ";" + std::to_string(x + 1) + "H";
+    std::cout << command << c;
+}
+
+void engine::printCharU(int x, int y, std::string c) {
+    std::string command = ESC + std::to_string(y + 1) + ";" + std::to_string(x + 1) + "H";
+    std::cout << command << c;
 }
 
 tte::box engine::drawBox(int x, int y, int w, int h, std::string title) {
     for (int i = y; i < y + h; i++) {
-        printChar(x, i, '|');
-        printChar(x + w - 1, i, '|');
+        printCharU(x, i, "│");
+        printCharU(x + w - 1, i, "│");
     }
     for(int i = x; i < x + w; i++) {
-        printChar(i, y, '=');
-        printChar(i, y + h - 1, '=');
+        printCharU(i, y, "─");
+        printCharU(i, y + h - 1, "─");
     }
 
     if (title != "") {
-        title = ">" + title + "<";
-        printText(x + 2, y, title.c_str());
+        printText(x + 3, y, title.c_str());
+        printCharU(x + 2, y, "┤");
+        printCharU(x + 3 + title.length(), y, "├");
     }
 
-    printChar(x, y, 'O');
-    printChar(x, y + h - 1, 'O');
-    printChar(x + w - 1, y, 'O');
-    printChar(x + w - 1, y + h - 1, 'O');
-
-    tte::box box(x, y, w, h);
+    printCharU(x, y, "╭");
+    printCharU(x, y + h - 1, "╰");
+    printCharU(x + w - 1, y, "╮");
+    printCharU(x + w - 1, y + h - 1, "╯");
+    
+    tte::box box(x, y, w, h, title);
     return box;
 }
 
@@ -113,14 +136,25 @@ void box::printText(int tx, int ty, std::string text) {
     }
 }
 
-void box::printChar(int tx, int ty, char c) {
+void box::printChar(int tx, int ty, wchar_t c) {
     engine::printChar(tx + x + 1, ty + y + 1, c);
 }
 
 void box::clear() {
     for (int i = 0; i < w - 2; i++) {
         for (int j = 0; j < h - 2; j++) {
-            engine::printChar(i + x + 1, j + y + 1, ' ');
+            engine::printCharU(i + x + 1, j + y + 1, " ");
         }
     }
+}
+
+void engine::changeColor(int r, int g, int b) {
+    //ESC[38;2;{r};{g};{b}m
+    std::string cl = "38;2;";
+    std::string command = ESC + cl + std::to_string(r) + ";" + std::to_string(g) + ";" + std::to_string(b) + "m";
+    std::cout << command;
+}
+
+void box::redraw() {
+    engine::drawBox(x, y, w, h, title);
 }

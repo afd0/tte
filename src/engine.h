@@ -2,6 +2,7 @@
 
 #include <string>
 #include <atomic>
+#include <ncurses.h>
 
 namespace tte {
 
@@ -10,15 +11,17 @@ namespace tte {
     class box {
         public:
             int x, y, w, h;
-            box(int xx, int yy, int ww, int hh) {
-                x = xx; y = yy; w = ww; h = hh;
+            std::string title;
+            box(int xx, int yy, int ww, int hh, std::string text) {
+                x = xx; y = yy; w = ww; h = hh; title = text;
             }
             box() {
 
             }
             void printText(int tx, int ty, std::string text);
-            void printChar(int cx, int cy, char c);
+            void printChar(int cx, int cy, wchar_t c);
             void clear();
+            void redraw();
     };
 
     class inputEvent {
@@ -43,9 +46,11 @@ namespace tte {
             int shutdown();
             static void printText(int x, int y, std::string text);
             static void printChar(int x, int y, char c);
-            box drawBox(int x, int y, int w, int h, std::string title);
+            static void printCharU(int x, int y, std::string c);
+            static box drawBox(int x, int y, int w, int h, std::string title);
             void getBounds(int &x, int &y);
             void getCursorPos(int &x, int &y);
             void scrClear();
+            static void changeColor(int r, int g, int b);
     };
 }
